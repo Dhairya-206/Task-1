@@ -1,11 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager</title>
-</head>
-<body>
-    <h1>Hello, GitHub Pages is working!</h1>
-</body>
-</html>
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus, Trash2 } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+
+const initialTasks = {
+  todo: [
+    { id: "1", content: "Design UI for Task Manager" },
+    { id: "2", content: "Integrate with GHL API" },
+  ],
+  inProgress: [{ id: "3", content: "Develop Drag & Drop Feature" }],
+  completed: [{ id: "4", content: "Set Up GitHub Pages" }],
+};
+
+const TaskManager = () => {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const { source, destination } = result;
+    const sourceCol = tasks[source.droppableId];
+    const destCol = tasks[destination.droppableId];
+    const task = sourceCol[source.index];
+
+    const newSourceCol = [...sourceCol];
+    newSourceCol.splice(source.index, 1);
+    const newDestCol = [...destCol];
+    newDestCol.splice(destination.index, 0, task);
+
+    setTasks({
+      ...tasks,
+      [source.droppableId]: newSourceCol,
+      [destination.droppableId]: newDestCol,
+    });
+  };
+
+  return (
+    <div className="grid grid-cols-3 gap-4 p-6 bg-gray-100 min-h-screen">
+      <DragDropContext onDragEnd={onDragEnd}>
+        {Object.entries(tasks).map(([columnId, columnTasks]) => (
+          <Droppable key={columnId} droppableId={columnId}>
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="bg-white shadow-lg rounded-lg p-4"
+              >
+                <h2 className="text-lg font-bold mb-2 text-blue-900 capitalize">
+                  {columnId.replace(/([A-Z])/g, " $1")}
+                </h2>
+                {columnTasks.map((task, index) => (
+                  <Draggable key={task.id} draggableId={task.id} index={index}>
+                    {(provided) => (
+                      <Card
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className="mb-2"
+                      >
+                        <CardContent className="p-2 flex justify-between">
+                          <span>{task.content}</span>
+                          <Trash2 className="cursor-pointer text-red-500" />
+                        </CardContent>
+                      </Card>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+                <Button className="w-full mt-2 flex items-center justify-center">
+                  <Plus size={16} className="mr-2" /> Add Task
+                </Button>
+              </div>
+            )}
+          </Droppable>
+        ))}
+      </DragDropContext>
+    </div>
+  );
+};
+
+export default TaskManager;
